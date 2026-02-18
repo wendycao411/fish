@@ -1,0 +1,33 @@
+# macOS + Python
+.DS_Store
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# Media/audio files (global)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wav
+*.flac
+
+# Your dataset / large-data folders
+2019-09-15_HornbyIsland_AMAR_07-HI/
+Test Data for Rupa/
+fisheye/
+processed/
+synced_pairs/
+
+# Large generated outputs in subprojects
+XAV-arrays/localization/debug_detection_frames/
+XAV-arrays/localization/out_heat_csv/
+XAV-arrays/localization/out_synced_pairs/
+XAV-arrays/localization/simulated_annealing_results/
+
+# Optional: common training artifacts
+*.pt
+*.pth
+*.ckpt
