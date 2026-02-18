@@ -13,6 +13,7 @@ __pycache__/
 *.webm
 *.wav
 *.flac
+!XAV-arrays/localization/demo.mp4
 
 # Your dataset / large-data folders
 2019-09-15_HornbyIsland_AMAR_07-HI/

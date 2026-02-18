@@ -17,7 +17,11 @@ The broader significance lies in reducing manual annotation effort, improving de
 ## Demo
 Demo video:
 
-[Watch localization demo (MP4)](XAV-arrays/localization/demo.mp4)
+<video controls width="900" src="https://raw.githubusercontent.com/wendycao411/fish/main/XAV-arrays/localization/demo.mp4">
+  Your browser does not support embedded video.
+</video>
+
+[Open demo video directly](https://raw.githubusercontent.com/wendycao411/fish/main/XAV-arrays/localization/demo.mp4)
 
 ## Project Structure
 ```text
