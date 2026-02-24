@@ -21,6 +21,8 @@ fisheye/
 processed/
 synced_pairs/
 CFDD_dataset/
+extracted/
+extracted_frames_200/
 
 # Large generated outputs in subprojects
 XAV-arrays/localization/debug_detection_frames/

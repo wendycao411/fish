@@ -40,3 +40,10 @@ This repo contains links to public datasets, code to parse datasets into a commo
 - requirements.txt for things like fathomnet environment
 - COCO format output
 
+## Ultralytics YOLO pipeline (new)
+
+An additive modern Ultralytics pipeline is available at:
+
+- `ultralytics_yolo/README_ultralytics.md`
+
+This keeps the original YOLOv5 setup intact while adding dataset preparation + train/val/infer wrappers using the `ultralytics` package (YOLO11/YOLO26 checkpoints).
