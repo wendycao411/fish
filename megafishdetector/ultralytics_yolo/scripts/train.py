@@ -11,13 +11,24 @@ from ultralytics import YOLO
 from common import default_data_yaml, default_runs_root
 
 
+def parse_batch(value: str) -> int | float:
+    try:
+        numeric = float(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("batch must be numeric, e.g. 16, 0.7, or -1") from e
+
+    if numeric.is_integer():
+        return int(numeric)
+    return numeric
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train Ultralytics YOLO for MegaFish")
     parser.add_argument("--model", type=str, default="yolo11m.pt", help="Model checkpoint (e.g., yolo11m.pt or yolo26m.pt)")
     parser.add_argument("--data", type=Path, default=default_data_yaml(), help="Data YAML path")
     parser.add_argument("--imgsz", type=int, default=1280)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch", type=str, default="auto", help="Batch size or 'auto'")
+    parser.add_argument("--batch", type=parse_batch, default=-1, help="Batch size as int/float, or -1 for autobatch")
     parser.add_argument("--device", type=str, default="0", help="Device id or 'cpu'")
     parser.add_argument("--project", type=Path, default=default_runs_root())
     parser.add_argument("--name", type=str, default="train")
