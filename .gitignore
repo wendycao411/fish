@@ -23,6 +23,7 @@ synced_pairs/
 CFDD_dataset/
 extracted/
 extracted_frames_200/
+megafishdetector/datasets
 
 # Large generated outputs in subprojects
 XAV-arrays/localization/debug_detection_frames/
@@ -34,3 +35,9 @@ XAV-arrays/localization/simulated_annealing_results/
 *.pt
 *.pth
 *.ckpt
+
+# YOLOv5 generated outputs
+megafishdetector/yolov5/logs/
+megafishdetector/yolov5/runs/
+megafishdetector/yolov5/wandb/
+megafishdetector/yolov5/fish-heatmap-modulation/
