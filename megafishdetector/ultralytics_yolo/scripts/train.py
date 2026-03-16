@@ -34,13 +34,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--name", type=str, default="train")
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--resume", action="store_true", help="Resume from project/name/weights/last.pt")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    model = YOLO(args.model)
-    model.train(
+    run_dir = args.project / args.name
+    last_ckpt = run_dir / "weights" / "last.pt"
+
+    train_kwargs = dict(
         data=str(args.data.resolve()),
         imgsz=args.imgsz,
         epochs=args.epochs,
@@ -51,6 +54,16 @@ def main() -> None:
         workers=args.workers,
         seed=args.seed,
     )
+
+    if args.resume:
+        if not last_ckpt.exists():
+            raise FileNotFoundError(f"Requested --resume but checkpoint not found: {last_ckpt}")
+        model = YOLO(str(last_ckpt.resolve()))
+        train_kwargs["resume"] = True
+    else:
+        model = YOLO(args.model)
+
+    model.train(**train_kwargs)
 
 
 if __name__ == "__main__":
