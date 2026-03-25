@@ -1,0 +1,7 @@
+run_name,alpha,best_epoch,best_precision,best_recall,best_map50,best_map5095,final_box_loss,final_obj_loss
+subset250_yolov5m_alpha0.0_fixed,0.0,99,0.98928,0.83784,0.92441,0.68952,0.016062,0.0099997
+subset250_yolov5m_alpha0.1_fixed,0.1,99,1.0,0.85912,0.92743,0.64821,0.017481,0.010586
+subset250_yolov5m_alpha0.25_fixed,0.25,96,0.91856,0.91456,0.93712,0.66791,0.017131,0.0098727
+subset250_yolov5m_alpha0.5_fixed,0.5,76,0.91552,0.89189,0.94433,0.67496,0.01701,0.011814
+subset250_yolov5m_alpha1.0_fixed,1.0,99,1.0,0.82829,0.91894,0.65628,0.017105,0.012059
+subset250_yolov5m_alpha2.0_fixed,2.0,98,0.99785,0.83784,0.94462,0.68803,0.015802,0.0095924

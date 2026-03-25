@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -102,19 +103,27 @@ def build_training_callbacks(args: argparse.Namespace, run_dir: Path, resume_ckp
     progress_state: dict[str, Any] = {"best_epoch": None}
 
     def checkpoint_state(trainer) -> dict[str, Any]:
+        current_epoch = getattr(trainer, "epoch", -1) + 1
+        start_epoch = getattr(trainer, "start_epoch", 0)
+        epochs_target = getattr(trainer, "epochs", args.epochs)
+        trainer_best_epoch = getattr(getattr(trainer, "stopper", None), "best_epoch", None)
+        if trainer_best_epoch is not None:
+            trainer_best_epoch += 1
+        best_epoch = progress_state["best_epoch"] if progress_state["best_epoch"] is not None else trainer_best_epoch
+        metrics = getattr(trainer, "metrics", None) or {}
         return {
             "resume_requested": bool(args.resume or args.resume_checkpoint),
             "resume_checkpoint": str(resume_ckpt) if resume_ckpt else None,
             "last_checkpoint": str(trainer.last.resolve()) if trainer.last.exists() else None,
             "best_checkpoint": str(trainer.best.resolve()) if trainer.best.exists() else None,
-            "epochs_target": trainer.epochs,
-            "start_epoch": trainer.start_epoch,
-            "current_epoch": getattr(trainer, "epoch", -1) + 1,
-            "epochs_completed": max(getattr(trainer, "epoch", -1) + 1, trainer.start_epoch),
-            "best_epoch": progress_state["best_epoch"],
-            "best_fitness": trainer.best_fitness,
-            "fitness": trainer.fitness,
-            "metrics": trainer.metrics or {},
+            "epochs_target": epochs_target,
+            "start_epoch": start_epoch,
+            "current_epoch": current_epoch,
+            "epochs_completed": max(current_epoch, start_epoch),
+            "best_epoch": best_epoch,
+            "best_fitness": getattr(trainer, "best_fitness", None),
+            "fitness": getattr(trainer, "fitness", None),
+            "metrics": metrics,
             "updated_at": utc_now(),
         }
 
@@ -124,17 +133,27 @@ def build_training_callbacks(args: argparse.Namespace, run_dir: Path, resume_ckp
         run_id = wandb_id_path.read_text(encoding="utf-8").strip() if wandb_id_path.exists() else wandb.util.generate_id()
         ensure_dir(wandb_id_path.parent)
         wandb_id_path.write_text(run_id + "\n", encoding="utf-8")
+        init_kwargs = dict(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            name=args.name,
+            id=run_id,
+            resume="allow",
+            dir=str(run_dir),
+            config={k: to_serializable(v) for k, v in vars(args).items()},
+            tags=list(args.wandb_tags),
+        )
         if wandb.run is None:
-            wandb_state["run"] = wandb.init(
-                project=args.wandb_project,
-                entity=args.wandb_entity,
-                name=args.name,
-                id=run_id,
-                resume="allow",
-                dir=str(run_dir),
-                config={k: to_serializable(v) for k, v in vars(args).items()},
-                tags=list(args.wandb_tags),
-            )
+            try:
+                wandb_state["run"] = wandb.init(**init_kwargs)
+            except Exception as exc:
+                if "No API key configured" not in str(exc):
+                    raise
+                print(
+                    "[WARN] W&B API key not configured on this node; falling back to offline logging. "
+                    "Run `wandb login` or export WANDB_API_KEY for online sync."
+                )
+                wandb_state["run"] = wandb.init(mode="offline", **init_kwargs)
         else:
             wandb_state["run"] = wandb.run
 
@@ -170,17 +189,17 @@ def build_training_callbacks(args: argparse.Namespace, run_dir: Path, resume_ckp
 
     def on_fit_epoch_end(trainer) -> None:
         epoch = trainer.epoch + 1
-        train_metrics = trainer.label_loss_items(trainer.tloss, prefix="train") if trainer.tloss is not None else {}
+        train_metrics = trainer.label_loss_items(trainer.tloss, prefix="train") if getattr(trainer, "tloss", None) is not None else {}
         log_payload = {
             "epoch": epoch,
             "epochs_target": trainer.epochs,
             "progress": epoch / trainer.epochs if trainer.epochs else None,
-            "best_fitness": trainer.best_fitness,
+            "best_fitness": getattr(trainer, "best_fitness", None),
             **train_metrics,
-            **trainer.lr,
-            **(trainer.metrics or {}),
+            **getattr(trainer, "lr", {}),
+            **(getattr(trainer, "metrics", None) or {}),
         }
-        if trainer.fitness is not None and trainer.best_fitness == trainer.fitness:
+        if getattr(trainer, "fitness", None) is not None and getattr(trainer, "best_fitness", None) == trainer.fitness:
             progress_state["best_epoch"] = epoch
         append_jsonl(
             history_path,
