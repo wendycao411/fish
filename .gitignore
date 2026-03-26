@@ -41,3 +41,7 @@ megafishdetector/yolov5/logs/
 megafishdetector/yolov5/runs/
 megafishdetector/yolov5/wandb/
 megafishdetector/yolov5/fish-heatmap-modulation/
+
+# Ultralytics YOLO generated outputs
+megafishdetector/runs/
+megafishdetector/wandb/
