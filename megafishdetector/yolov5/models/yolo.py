@@ -174,6 +174,17 @@ class BaseModel(nn.Module):
                 and m.i == getattr(self, "heatmap_modulate_index", -1)
                 and isinstance(x, torch.Tensor)
             ):
+                if self.training:
+                    with torch.no_grad():
+                        xf = x.detach().float()
+                        LOGGER.info(
+                            "pre-mod layer=%s shape=%s min=%.4f max=%.4f mean=%.4f",
+                            m.i,
+                            tuple(xf.shape),
+                            xf.min().item(),
+                            xf.max().item(),
+                            xf.mean().item(),
+                        )
                 x = self.heatmap_modulation(x, heatmap)
             if profile:
                 self._profile_one_layer(m, x, dt)
