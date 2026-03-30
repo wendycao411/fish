@@ -41,6 +41,9 @@ megafishdetector/yolov5/logs/
 megafishdetector/yolov5/runs/
 megafishdetector/yolov5/wandb/
 megafishdetector/yolov5/fish-heatmap-modulation/
+megafishdetector/yolov5/fish-heatmap-modulation-subset250-alpha-sweep/**/events.out.tfevents.*
+megafishdetector/yolov5/fish-heatmap-modulation-subset250-alpha-sweep/**/hyp.yaml
+megafishdetector/yolov5/fish-heatmap-modulation-subset250-alpha-sweep/**/opt.yaml
 
 # Ultralytics YOLO generated outputs
 megafishdetector/runs/
