@@ -59,8 +59,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--heatmap-threshold",
         type=float,
-        default=0.01,
-        help="Heatmap max threshold above which a frame counts as an event",
+        default=0.1,
+        help="Heatmap max threshold above which a frame counts as an event (defaults assume saved heatmaps are scaled to 0-10)",
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--overwrite", action="store_true", help="Delete output dir if it exists")

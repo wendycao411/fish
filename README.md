@@ -98,3 +98,4 @@ python embedding_retrieval_scripts/retrieval_results.py \
 - Migrate `megafishdetector` from YOLOv5 to current Ultralytics YOLO (YOLO26) training/inference commands.
 - Reproduce fish detector training with tracked dataset versions.
 - Add an end-to-end script to run preprocessing, training, evaluation, and export in one workflow.
+

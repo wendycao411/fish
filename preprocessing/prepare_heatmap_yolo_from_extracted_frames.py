@@ -84,7 +84,12 @@ def add_gaussian_inplace(
     heat_hw[v0 : v1 + 1, u0 : u1 + 1] += float(weight) * g
 
 
-def normalize_heatmap(h: np.ndarray, percentile: float = 99.0, eps: float = 1e-8) -> np.ndarray:
+def normalize_heatmap(
+    h: np.ndarray,
+    percentile: float = 99.0,
+    eps: float = 1e-8,
+    output_max: float = 1.0,
+) -> np.ndarray:
     h = np.asarray(h, dtype=np.float32)
     h = np.nan_to_num(h, nan=0.0, posinf=0.0, neginf=0.0)
     pos = h[h > 0]
@@ -96,7 +101,8 @@ def normalize_heatmap(h: np.ndarray, percentile: float = 99.0, eps: float = 1e-8
         hi = float(np.max(h))
         if hi <= eps:
             return np.zeros_like(h, dtype=np.float32)
-    h = np.clip(h / hi, 0.0, 1.0)
+    scale_max = max(float(output_max), 0.0)
+    h = np.clip(h / hi, 0.0, 1.0) * scale_max
     return h.astype(np.float32)
 
 
@@ -106,7 +112,7 @@ def overlay_heatmap(
     alpha: float = 0.45,
     cmap: int = cv2.COLORMAP_JET,
 ) -> np.ndarray:
-    h = normalize_heatmap(heat_hw)
+    h = normalize_heatmap(heat_hw, output_max=1.0)
     heat_u8 = np.clip(255.0 * h, 0, 255).astype(np.uint8)
     heat_color = cv2.applyColorMap(heat_u8, cmap)
     if heat_color.shape[:2] != frame_bgr.shape[:2]:
@@ -115,7 +121,7 @@ def overlay_heatmap(
 
 
 def heatmap_to_color_image(heat_hw: np.ndarray, cmap: int = cv2.COLORMAP_JET) -> np.ndarray:
-    h = normalize_heatmap(heat_hw)
+    h = normalize_heatmap(heat_hw, output_max=1.0)
     heat_u8 = np.clip(255.0 * h, 0, 255).astype(np.uint8)
     return cv2.applyColorMap(heat_u8, cmap)
 
@@ -181,6 +187,7 @@ def build_heatmaps_for_requested_frames(
     coord_cols: tuple[str, str] = ("x", "y"),
     sigma_px: float = 20.0,
     use_error_spans: bool = True,
+    output_max: float = 10.0,
 ) -> dict[int, np.ndarray]:
     df = pd.read_csv(localizations_csv)
     c1_name, c2_name = coord_cols
@@ -225,7 +232,7 @@ def build_heatmaps_for_requested_frames(
         add_gaussian_inplace(heatmaps[frame_idx], u, v, sigma_u=su, sigma_v=sv, weight=conf)
 
     for idx in list(heatmaps.keys()):
-        heatmaps[idx] = normalize_heatmap(heatmaps[idx])
+        heatmaps[idx] = normalize_heatmap(heatmaps[idx], output_max=output_max)
 
     return heatmaps
 
@@ -313,6 +320,12 @@ def main() -> None:
         help="overlay: save fused image only; separate: save original image + separate heatmap image",
     )
     parser.add_argument("--sigma-px", type=float, default=20.0)
+    parser.add_argument(
+        "--heatmap-output-max",
+        type=float,
+        default=10.0,
+        help="Maximum value for saved heatmap arrays; display PNGs/overlays still render on a 0-1 normalized scale",
+    )
     parser.add_argument("--coord-cols", nargs=2, default=("x", "y"))
     parser.add_argument("--no-error-spans", action="store_true")
     parser.add_argument(
@@ -393,6 +406,7 @@ def main() -> None:
             coord_cols=tuple(args.coord_cols),
             sigma_px=args.sigma_px,
             use_error_spans=not args.no_error_spans,
+            output_max=args.heatmap_output_max,
         )
 
         for rec in clip_records:

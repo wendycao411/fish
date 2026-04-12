@@ -23,6 +23,7 @@ import csv
 import math
 import re
 import struct
+import subprocess
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -92,7 +93,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--homography",
         type=Path,
-        default=Path("/data/vision/beery/scratch/wendy/fish/XAV-arrays/localization/side_H.npy"),
+        default=Path("/data/vision/beery/scratch/wendy/fish/XAV-arrays/localization/top_down_H.npy"),
         help="3x3 homography .npy used to project x/y world coordinates into image pixels.",
     )
     parser.add_argument(
@@ -131,6 +132,17 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         required=True,
         help="Directory for output CSV reports.",
+    )
+    parser.add_argument(
+        "--save-visualizations",
+        action="store_true",
+        help="Write one visualization image for each unmatched_in_frame localization.",
+    )
+    parser.add_argument(
+        "--sound-box-size",
+        type=int,
+        default=100,
+        help="Side length in pixels for the sound-localization box in the visualization.",
     )
     return parser.parse_args()
 
@@ -379,10 +391,75 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
         writer.writerows(rows)
 
 
+def clamp(value: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, value))
+
+
+def save_unmatched_visualization(
+    *,
+    image_path: str,
+    out_path: Path,
+    sound_x: float,
+    sound_y: float,
+    sound_box_size: int,
+    label_box: Box,
+    distance_px: float,
+) -> None:
+    half = sound_box_size / 2.0
+    sx1 = sound_x - half
+    sy1 = sound_y - half
+    sx2 = sound_x + half
+    sy2 = sound_y + half
+
+    draw_commands = [
+        f"rectangle {sx1:.2f},{sy1:.2f} {sx2:.2f},{sy2:.2f}",
+        f"circle {sound_x:.2f},{sound_y:.2f} {sound_x + 6.0:.2f},{sound_y:.2f}",
+    ]
+    label_draw = f"rectangle {label_box.xtl:.2f},{label_box.ytl:.2f} {label_box.xbr:.2f},{label_box.ybr:.2f}"
+    label_text = f"dist={distance_px:.1f}px"
+
+    cmd = [
+        "convert",
+        image_path,
+        "-stroke",
+        "#00FFFF",
+        "-strokewidth",
+        "4",
+        "-fill",
+        "none",
+        "-draw",
+        draw_commands[0],
+        "-draw",
+        draw_commands[1],
+        "-stroke",
+        "#FF2D2D",
+        "-strokewidth",
+        "4",
+        "-fill",
+        "none",
+        "-draw",
+        label_draw,
+        "-fill",
+        "#FFFFFF",
+        "-undercolor",
+        "#000000B0",
+        "-pointsize",
+        "26",
+        "-annotate",
+        "+20+40",
+        label_text,
+        str(out_path),
+    ]
+    subprocess.run(cmd, check=True)
+
+
 def main() -> int:
     args = parse_args()
     splits = tuple(args.splits)
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    vis_dir = args.output_dir / "unmatched_visualizations"
+    if args.save_visualizations:
+        vis_dir.mkdir(parents=True, exist_ok=True)
 
     homography = read_npy_matrix(args.homography)
     dataset_frames = load_dataset_frames(args.dataset_root, splits)
@@ -507,6 +584,24 @@ def main() -> int:
                     summary_counts["matched"] += 1
                 else:
                     summary_counts["unmatched_in_frame"] += 1
+                    vis_path = ""
+                    if args.save_visualizations:
+                        vis_name = (
+                            f"{frame.split}__{frame.stem}__row{loc.row_number}"
+                            "__unmatched.jpg"
+                        )
+                        out_path = vis_dir / vis_name
+                        save_unmatched_visualization(
+                            image_path=frame.image_path,
+                            out_path=out_path,
+                            sound_x=u,
+                            sound_y=v,
+                            sound_box_size=args.sound_box_size,
+                            label_box=best_box,
+                            distance_px=best_distance,
+                        )
+                        vis_path = str(out_path)
+
                     unmatched_rows.append(
                         {
                             "status": "unmatched_in_frame",
@@ -533,6 +628,7 @@ def main() -> int:
                             "nearest_box_ytl": best_box.ytl,
                             "nearest_box_xbr": best_box.xbr,
                             "nearest_box_ybr": best_box.ybr,
+                            "visualization_path": vis_path,
                             "notes": "",
                         }
                     )
@@ -582,6 +678,7 @@ def main() -> int:
             "nearest_box_ytl",
             "nearest_box_xbr",
             "nearest_box_ybr",
+            "visualization_path",
             "notes",
         ],
     )
