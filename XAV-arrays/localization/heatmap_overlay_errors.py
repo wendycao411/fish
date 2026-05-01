@@ -17,7 +17,6 @@ from typing import Iterable
 import cv2
 import numpy as np
 import pandas as pd
-import soundfile as sf
 
 
 DEFAULT_OUT_ROOT = Path("/Users/wendycao/fish/XAV-arrays/localization/out_synced_pairs")
