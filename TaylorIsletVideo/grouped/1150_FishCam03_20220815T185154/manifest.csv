@@ -1,0 +1,5 @@
+item,path,start,end,notes
+video,/Users/wendycao/fish/TaylorIsletVideo/FishCam03 birdseye Taylor Islet/data/1128/1150_FishCam03_20220815T185154.856688Z_1600x1200_awb-auto_exp-night_fr-10_q-20_sh-0_b-50_c-0_i-400_sat-0.mp4,2022-08-15T18:51:54.856688Z,2022-08-15T18:56:54.856688Z,5-minute converted video
+overlapping_audio_full,/Users/wendycao/Library/CloudStorage/OneDrive-Personal/audio-visual-data/Test Data for Rupa/Taylor_Islet_AMAR_CentralHydrophone_AUDIO/AMAR173.4.20220815T183710Z.wav,2022-08-15T18:37:10Z,2022-08-15T19:07:09.002250Z,overlaps entire video; video starts 887.856688s into this WAV
+overlapping_audio_window,/Users/wendycao/fish/TaylorIsletVideo/grouped/1150_FishCam03_20220815T185154/AMAR173.4.20220815T183710Z_video_window.wav,2022-08-15T18:51:54.856688Z,2022-08-15T18:56:54.856688Z,trimmed to exact video window
+localizations,/Users/wendycao/Library/CloudStorage/OneDrive-Personal/audio-visual-data/Test Data for Rupa/All_Localizations_Daylight_LA_filtered_2_1_FS/AMAR173.4.20220815T183710Z.wav.chan0.Table.1.selections.FS.txt,2022-08-15T18:37:10Z,2022-08-15T19:07:09.002250Z,selection sheet for overlapping full WAV

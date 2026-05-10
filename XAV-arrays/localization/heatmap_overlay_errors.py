@@ -10,6 +10,8 @@ import argparse
 import re
 import shutil
 import subprocess
+import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -328,6 +330,8 @@ def make_time_varying_heat_overlay_video_errors(
     time_offset_sec: float = 0.0,
     max_frames: int | None = None,
     debug: bool = True,
+    progress_every_frames: int = 0,
+    progress_prefix: str = "",
 ) -> None:
     df = pd.read_csv(localizations_csv)
 
@@ -370,6 +374,7 @@ def make_time_varying_heat_overlay_video_errors(
     frame_adds: list[list[tuple[int, int, float]] | None] = [None] * n_frames
 
     frame_idx = 0
+    progress_started_at = time.monotonic()
     while frame_idx < n_frames:
         ok, frame = cap.read()
         if not ok:
@@ -449,6 +454,24 @@ def make_time_varying_heat_overlay_video_errors(
 
         writer.write(out)
         frame_idx += 1
+
+        if progress_every_frames > 0 and (
+            frame_idx == 1 or frame_idx == n_frames or frame_idx % progress_every_frames == 0
+        ):
+            elapsed = time.monotonic() - progress_started_at
+            rate = frame_idx / elapsed if elapsed > 0 else 0.0
+            remaining = (n_frames - frame_idx) / rate if rate > 0 else 0.0
+            percent = 100.0 * frame_idx / max(n_frames, 1)
+            width = 28
+            filled = int(round(width * frame_idx / max(n_frames, 1)))
+            bar = "[" + "#" * filled + "-" * (width - filled) + "]"
+            prefix = f"{progress_prefix} " if progress_prefix else ""
+            print(
+                f"{prefix}{bar} frame {frame_idx}/{n_frames} ({percent:5.1f}%) "
+                f"elapsed={elapsed/60:.1f} min ETA={remaining/60:.1f} min",
+                file=sys.stderr,
+                flush=True,
+            )
 
     cap.release()
     writer.release()

@@ -17,6 +17,10 @@ __pycache__/
 # Your dataset / large-data folders
 2019-09-15_HornbyIsland_AMAR_07-HI/
 Test Data for Rupa/
+darienne_frames/
+darienne_heatmap_overlays/
+danger_rocks_localization_windows/
+taylor_islet_localization_windows/
 fisheye/
 processed/
 synced_pairs/
