@@ -63,6 +63,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--sigma-px", type=float, default=24.0)
     parser.add_argument("--alpha", type=float, default=0.55)
+    parser.add_argument(
+        "--time-offset-sec",
+        type=float,
+        default=-5.0,
+        help="Shift localization times on video timeline (negative = earlier, positive = later). Default is -5.0s.",
+    )
     parser.add_argument("--max-videos", type=int, default=0)
     parser.add_argument("--max-frames", type=int, default=0, help="Debug limit per video.")
     parser.add_argument(
@@ -204,7 +210,7 @@ def render_dataset(
                     alpha=args.alpha,
                     decay_sec=0.0,
                     hard_cut=True,
-                    time_offset_sec=0.0,
+                    time_offset_sec=args.time_offset_sec,
                     max_frames=None if args.max_frames <= 0 else args.max_frames,
                     debug=not args.no_debug_frame,
                     progress_every_frames=args.frame_progress_every,
@@ -235,6 +241,7 @@ def render_dataset(
                 "video_path": str(video_path),
                 "localizations_csv": str(loc_csv),
                 "overlay_video": str(out_video),
+                "time_offset_sec": args.time_offset_sec,
                 "status": status,
             }
         )

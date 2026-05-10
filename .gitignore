@@ -19,8 +19,10 @@ data/
 processed/
 synced_pairs/
 CFDD_dataset/
-extracted/
 megafishdetector/datasets
+taylor_labels/
+yolo_dataset_merged/
+danger_labels/
 
 # Large generated outputs in subprojects
 XAV-arrays/localization/debug_detection_frames/
