@@ -16,7 +16,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import build_darienne_dataset as dataset
+import darienne_scripts.build_darienne_dataset as dataset
 
 
 DEFAULT_TAYLOR_ROOT = dataset.DEFAULT_ROOT / "FishCam03_birdseye_Taylor_Islet"

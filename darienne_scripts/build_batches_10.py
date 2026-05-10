@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Build 10-frame Taylor CVAT batches from batch_005 onward.
+"""Build 10-frame CVAT batches from existing batch_005+ manifests.
 
-This reads the existing Taylor `cvat_batches` manifests, keeps only 10 centered
-frames per localization window, removes duplicate frame timestamps caused by
-overlapping windows, and regroups the surviving images into new 5000-image
-batches under `taylor_islet_localization_windows/batches_10`.
+This reads existing CVAT batch manifests, keeps only 10 centered frames per
+localization window, removes duplicate frame timestamps caused by overlapping
+windows, and regroups the surviving images into new 5000-image batches.
 
-The output directory is written with hardlinks by default so the new batch set
-is fast to materialize without duplicating image data.
+Output directories are written with hardlinks by default for fast materialization
+without duplicating image data.
+
+Usage:
+  python scripts/build_batches_10.py --dataset {taylor|danger} [--source-root DIR] [--output-root DIR] [OPTIONS]
+
+Examples:
+  python scripts/build_batches_10.py --dataset taylor
+  python scripts/build_batches_10.py --dataset danger --start-batch 10 --batch-size 2000
 """
 
 from __future__ import annotations
@@ -23,8 +29,17 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-SOURCE_ROOT = REPO / "taylor_islet_localization_windows" / "cvat_batches"
-DEFAULT_OUTPUT_ROOT = REPO / "taylor_islet_localization_windows" / "batches_10"
+
+DATASET_CONFIGS = {
+    "taylor": {
+        "source_root": REPO / "taylor_islet_localization_windows" / "cvat_batches",
+        "output_root": REPO / "taylor_islet_localization_windows" / "batches_10",
+    },
+    "danger": {
+        "source_root": REPO / "danger_rocks_localization_windows" / "cvat_batches",
+        "output_root": REPO / "danger_rocks_localization_windows" / "batches_10",
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -41,15 +56,23 @@ class ManifestRow:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build 10-frame Taylor CVAT batches from existing batch_005+ manifests.")
-    parser.add_argument("--source-root", type=Path, default=SOURCE_ROOT)
-    parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
-    parser.add_argument("--start-batch", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=5000)
-    parser.add_argument("--keep-frames", type=int, default=10)
-    parser.add_argument("--mode", choices=("hardlink", "copy"), default="hardlink")
-    parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--dry-run", action="store_true")
+        description="Build 10-frame CVAT batches from existing batch_005+ manifests.",
+        epilog="Supported datasets: taylor, danger. Uses repository defaults unless overridden.",
+    )
+    parser.add_argument(
+        "--dataset",
+        choices=list(DATASET_CONFIGS.keys()),
+        required=True,
+        help="Dataset to build batches for",
+    )
+    parser.add_argument("--source-root", type=Path, default=None, help="Source cvat_batches directory (auto-detected if not provided)")
+    parser.add_argument("--output-root", type=Path, default=None, help="Output batches_10 directory (auto-detected if not provided)")
+    parser.add_argument("--start-batch", type=int, default=5, help="Starting batch number (default: 5)")
+    parser.add_argument("--batch-size", type=int, default=5000, help="Output batch size (default: 5000)")
+    parser.add_argument("--keep-frames", type=int, default=10, help="Frames to keep per window (default: 10)")
+    parser.add_argument("--mode", choices=("hardlink", "copy"), default="hardlink", help="File linking mode")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output root")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without writing")
     return parser.parse_args()
 
 
@@ -109,19 +132,33 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 
 def main() -> int:
     args = parse_args()
+
+    # Resolve source and output roots
+    config = DATASET_CONFIGS[args.dataset]
+    source_root = args.source_root or config["source_root"]
+    output_root = args.output_root or config["output_root"]
+
     if args.batch_size < 1:
         raise SystemExit("--batch-size must be at least 1")
     if args.keep_frames < 1:
         raise SystemExit("--keep-frames must be at least 1")
-    if not args.source_root.exists():
-        raise SystemExit(f"Source root does not exist: {args.source_root}")
+    if not source_root.exists():
+        raise SystemExit(f"Source root does not exist: {source_root}")
+
+    print(f"Dataset: {args.dataset}")
+    print(f"Source: {source_root}")
+    print(f"Output: {output_root}")
+    print()
 
     source_batches = [
-        path for path in sorted(args.source_root.iterdir())
+        path
+        for path in sorted(source_root.iterdir())
         if path.is_dir() and batch_number(path.name) >= args.start_batch
     ]
     if not source_batches:
         raise SystemExit(f"No source batches found at or after batch_{args.start_batch:03d}")
+
+    print(f"Found {len(source_batches)} source batches")
 
     grouped_rows: list[ManifestRow] = []
     seen_rows = 0
@@ -162,10 +199,14 @@ def main() -> int:
     if not grouped_rows:
         raise SystemExit("No manifest rows were loaded from the requested batches")
 
+    print(f"Loaded {len(grouped_rows)} rows from {seen_rows} total manifest entries")
+
+    # Group by window
     windows: dict[tuple[str, int], list[ManifestRow]] = defaultdict(list)
     for item in grouped_rows:
         windows[(item.batch_name, item.window_index)].append(item)
 
+    # Select centered frames per window
     selected_rows: list[ManifestRow] = []
     for key in sorted(windows.keys(), key=lambda item: (batch_number(item[0]), item[1])):
         rows = sorted(windows[key], key=lambda item: item.local_frame_index)
@@ -194,6 +235,7 @@ def main() -> int:
         )
     )
 
+    # Deduplicate overlapping frames
     deduped_rows: list[ManifestRow] = []
     seen_frames: set[tuple[str, str]] = set()
     overlap_frames_dropped = 0
@@ -205,6 +247,11 @@ def main() -> int:
         seen_frames.add(frame_key)
         deduped_rows.append(item)
 
+    print(f"After centering: {len(selected_rows)} rows")
+    print(f"Overlap frames dropped: {overlap_frames_dropped}")
+    print(f"Final rows: {len(deduped_rows)}")
+    print()
+
     if args.dry_run:
         summary = {
             "source_batches": len(source_batches),
@@ -213,17 +260,18 @@ def main() -> int:
             "kept_rows": len(deduped_rows),
             "overlap_frames_dropped": overlap_frames_dropped,
             "output_batches": (len(deduped_rows) + args.batch_size - 1) // args.batch_size,
-            "output_root": str(args.output_root),
+            "output_root": str(output_root),
         }
         print(json.dumps(summary, indent=2))
         return 0
 
-    if args.output_root.exists():
+    if output_root.exists():
         if not args.overwrite:
-            raise SystemExit(f"Output root already exists: {args.output_root}. Use --overwrite to replace it.")
-        shutil.rmtree(args.output_root)
-    args.output_root.mkdir(parents=True, exist_ok=True)
+            raise SystemExit(f"Output root already exists: {output_root}. Use --overwrite to replace it.")
+        shutil.rmtree(output_root)
+    output_root.mkdir(parents=True, exist_ok=True)
 
+    # Regroup into batches
     manifest_rows_by_batch: list[list[dict[str, object]]] = []
     batch_count = (len(deduped_rows) + args.batch_size - 1) // args.batch_size
     for _ in range(batch_count):
@@ -232,7 +280,7 @@ def main() -> int:
     for index, item in enumerate(deduped_rows):
         batch_zero = index // args.batch_size
         batch_name = f"batch_{batch_zero + 1:03d}"
-        batch_dir = args.output_root / batch_name
+        batch_dir = output_root / batch_name
         dest = batch_dir / item.source_path.name
         copy_or_link(item.source_path, dest, args.mode)
 
@@ -245,7 +293,7 @@ def main() -> int:
     summary_rows: list[dict[str, object]] = []
     for batch_zero, rows in enumerate(manifest_rows_by_batch):
         batch_name = f"batch_{batch_zero + 1:03d}"
-        batch_dir = args.output_root / batch_name
+        batch_dir = output_root / batch_name
         batch_dir.mkdir(parents=True, exist_ok=True)
         if rows:
             write_csv(batch_dir / "manifest.csv", rows)
@@ -258,12 +306,13 @@ def main() -> int:
             }
         )
 
-    write_csv(args.output_root / "batch_summary.csv", summary_rows)
-    (args.output_root / "summary.json").write_text(
+    write_csv(output_root / "batch_summary.csv", summary_rows)
+    (output_root / "summary.json").write_text(
         json.dumps(
             {
-                "source_root": str(args.source_root),
-                "output_root": str(args.output_root),
+                "dataset": args.dataset,
+                "source_root": str(source_root),
+                "output_root": str(output_root),
                 "start_batch": args.start_batch,
                 "keep_frames": args.keep_frames,
                 "batch_size": args.batch_size,
@@ -284,7 +333,7 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "output_root": str(args.output_root),
+                "output_root": str(output_root),
                 "kept_rows": len(deduped_rows),
                 "overlap_frames_dropped": overlap_frames_dropped,
                 "output_batches": batch_count,
