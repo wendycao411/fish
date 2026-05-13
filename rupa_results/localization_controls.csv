@@ -1,0 +1,9 @@
+location_id,location,condition_id,precision,recall,seed
+danger_rocks,Danger Rocks,random_heatmap,0.33,0.561,7
+danger_rocks,Danger Rocks,shuffled_heatmap,0.421,0.528,7
+danger_rocks,Danger Rocks,true_heatmap,0.723,0.779,7
+danger_rocks,Danger Rocks,oracle_roi,0.922,0.884,7
+taylor_islet,Taylor Islet,random_heatmap,0.356,0.528,7
+taylor_islet,Taylor Islet,shuffled_heatmap,0.436,0.605,7
+taylor_islet,Taylor Islet,true_heatmap,0.698,0.795,7
+taylor_islet,Taylor Islet,oracle_roi,0.866,0.904,7

@@ -7,11 +7,13 @@ instead of adding point-mass circles and blurring with a fixed sigma.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import re
 import shutil
 import subprocess
 import sys
 import time
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -94,6 +96,92 @@ def overlay_heat(frame_bgr: np.ndarray, heat_smooth: np.ndarray, alpha: float = 
     if heat_color.shape[:2] != frame_bgr.shape[:2]:
         heat_color = cv2.resize(heat_color, (frame_bgr.shape[1], frame_bgr.shape[0]))
     return cv2.addWeighted(frame_bgr, 1 - alpha, heat_color, alpha, 0)
+
+
+def parse_video_start_from_stem(stem: str) -> dt.datetime:
+    match = re.search(r"_(\d{8}T\d{6}(?:\.\d+)?)Z(?:_|$)", stem)
+    if not match:
+        raise ValueError(f"Could not parse UTC timestamp from video name: {stem}")
+    return dt.datetime.strptime(match.group(1), "%Y%m%dT%H%M%S.%f")
+
+
+def parse_label_frame_time(label_name: str) -> dt.datetime | None:
+    match = re.search(r"_frame\d+_(\d{8}T\d{6}\.\d{3})Z\.txt$", label_name)
+    if not match:
+        return None
+    return dt.datetime.strptime(match.group(1), "%Y%m%dT%H%M%S.%f")
+
+
+def load_yolo_boxes_by_frame(
+    label_root: Path | None,
+    video_stem: str,
+    fps: float,
+    n_frames: int,
+) -> dict[int, list[tuple[int, float, float, float, float]]]:
+    if label_root is None:
+        return {}
+    if not label_root.exists():
+        raise FileNotFoundError(label_root)
+
+    video_start = parse_video_start_from_stem(video_stem)
+    boxes_by_frame: dict[int, list[tuple[int, float, float, float, float]]] = defaultdict(list)
+    label_paths = sorted(label_root.rglob(f"{video_stem}*.txt"))
+
+    for label_path in label_paths:
+        label_time = parse_label_frame_time(label_path.name)
+        if label_time is None:
+            continue
+        frame_idx = int(round((label_time - video_start).total_seconds() * fps))
+        if frame_idx < 0 or frame_idx >= n_frames:
+            continue
+
+        with label_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 5:
+                    continue
+                try:
+                    cls = int(float(parts[0]))
+                    x_center, y_center, box_w, box_h = map(float, parts[1:5])
+                except ValueError:
+                    continue
+                boxes_by_frame[frame_idx].append((cls, x_center, y_center, box_w, box_h))
+
+    total_boxes = sum(len(v) for v in boxes_by_frame.values())
+    print(
+        f"[labels] loaded {total_boxes} boxes from {len(label_paths)} files "
+        f"across {len(boxes_by_frame)} frames"
+    )
+    return dict(boxes_by_frame)
+
+
+def draw_yolo_boxes(
+    frame_bgr: np.ndarray,
+    boxes: list[tuple[int, float, float, float, float]],
+    color: tuple[int, int, int] = (0, 255, 255),
+) -> None:
+    Hh, W = frame_bgr.shape[:2]
+    for cls, x_center, y_center, box_w, box_h in boxes:
+        x1 = int(round((x_center - box_w / 2.0) * W))
+        y1 = int(round((y_center - box_h / 2.0) * Hh))
+        x2 = int(round((x_center + box_w / 2.0) * W))
+        y2 = int(round((y_center + box_h / 2.0) * Hh))
+        x1 = int(np.clip(x1, 0, W - 1))
+        y1 = int(np.clip(y1, 0, Hh - 1))
+        x2 = int(np.clip(x2, 0, W - 1))
+        y2 = int(np.clip(y2, 0, Hh - 1))
+        if x2 <= x1 or y2 <= y1:
+            continue
+        cv2.rectangle(frame_bgr, (x1, y1), (x2, y2), color, 3)
+        cv2.putText(
+            frame_bgr,
+            str(cls),
+            (x1, max(20, y1 - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            color,
+            2,
+        )
 
 
 def _pos_float(v: object) -> float | None:
@@ -332,6 +420,7 @@ def make_time_varying_heat_overlay_video_errors(
     debug: bool = True,
     progress_every_frames: int = 0,
     progress_prefix: str = "",
+    yolo_label_root: Path | None = None,
 ) -> None:
     df = pd.read_csv(localizations_csv)
 
@@ -348,6 +437,12 @@ def make_time_varying_heat_overlay_video_errors(
     print(f"[video] fps={fps:.2f}, size={W}x{Hh}, frames={n_frames} (total={n_frames_total})")
 
     events = build_event_table(df, video_w=W, video_h=Hh, fps=fps, H=H, time_offset_sec=time_offset_sec)
+    boxes_by_frame = load_yolo_boxes_by_frame(
+        label_root=yolo_label_root,
+        video_stem=video_path.stem,
+        fps=fps,
+        n_frames=n_frames,
+    )
 
     print("[events] usable events:", len(events))
     if len(events) > 0:
@@ -441,10 +536,13 @@ def make_time_varying_heat_overlay_video_errors(
         )
 
         out = overlay_heat(frame, heat_smooth, alpha=alpha)
+        frame_boxes = boxes_by_frame.get(frame_idx, [])
+        if frame_boxes:
+            draw_yolo_boxes(out, frame_boxes)
 
         cv2.putText(
             out,
-            f"errors  t={frame_idx/fps:.2f}s  adds={len(adds)}",
+            f"errors  t={frame_idx/fps:.2f}s  adds={len(adds)}  boxes={len(frame_boxes)}",
             (20, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
@@ -694,6 +792,7 @@ def parse_args() -> argparse.Namespace:
         help="Rebuild heat each frame from the trailing window (hard cutoff at window-sec).",
     )
     parser.add_argument("--time-offset-sec", type=float, default=0.0)
+    parser.add_argument("--yolo-label-root", type=Path, help="Root folder containing YOLO label .txt files")
     parser.add_argument("--max-frames", type=int, default=0, help="Limit frames for faster debugging")
     parser.add_argument("--no-debug", action="store_true", help="Disable debug prints and debug frame PNG")
     parser.add_argument(
@@ -723,6 +822,7 @@ def run_single_job(args: argparse.Namespace, H: np.ndarray) -> None:
         time_offset_sec=args.time_offset_sec,
         max_frames=None if args.max_frames <= 0 else args.max_frames,
         debug=not args.no_debug,
+        yolo_label_root=args.yolo_label_root,
     )
     if args.with_audio:
         mux_audio_from_source_video(rendered_video_path=args.out_video, source_video_path=args.video)
@@ -765,6 +865,7 @@ def run_synced_pipeline(args: argparse.Namespace, H: np.ndarray) -> None:
             time_offset_sec=args.time_offset_sec,
             max_frames=None if args.max_frames <= 0 else args.max_frames,
             debug=not args.no_debug,
+            yolo_label_root=args.yolo_label_root,
         )
         if args.with_audio:
             mux_audio_from_source_video(

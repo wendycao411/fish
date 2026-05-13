@@ -1,0 +1,21 @@
+location_id,location,alpha,condition,precision,recall,simulated,seed,expected_interpretation
+danger_rocks,Danger Rocks,0.0,no audio modulation,0.387,0.940,true,7,under-filtered visual path; catches many candidates but includes many non-vocalizing fish
+danger_rocks,Danger Rocks,3.0,weak modulation,0.527,0.883,true,7,localization influence is present but still under-filters extra detections
+danger_rocks,Danger Rocks,5.0,low-mid modulation,0.544,0.806,true,7,audio guidance is starting to meaningfully suppress unrelated detections
+danger_rocks,Danger Rocks,7.0,moderate modulation,0.581,0.913,true,7,audio guidance is strong enough to improve localization-sensitive detection
+danger_rocks,Danger Rocks,9.0,near-ideal modulation,0.719,0.770,true,7,approaches the strongest selective behavior but remains slightly under-weighted
+danger_rocks,Danger Rocks,11.0,near-ideal modulation,0.698,0.804,true,7,"strong selective behavior, close to the preferred setting"
+danger_rocks,Danger Rocks,13.0,near-ideal modulation,0.768,0.756,true,7,"still selective, with small random variation around the optimum"
+danger_rocks,Danger Rocks,15.0,best modulation,0.897,0.835,true,7,expected best precision/recall tradeoff in simulated results
+danger_rocks,Danger Rocks,18.0,over-strong modulation,0.854,0.795,true,7,"begins to over-trust heatmaps, but degradation is gradual"
+danger_rocks,Danger Rocks,22.0,very strong modulation,0.617,0.850,true,7,audio dominates the visual model; high candidate recovery but low specificity
+taylor_islet,Taylor Islet,0.0,no audio modulation,0.296,0.891,true,7,under-filtered visual path; catches many candidates but includes many non-vocalizing fish
+taylor_islet,Taylor Islet,3.0,weak modulation,0.504,0.744,true,7,localization influence is present but still under-filters extra detections
+taylor_islet,Taylor Islet,5.0,low-mid modulation,0.447,0.713,true,7,audio guidance is starting to meaningfully suppress unrelated detections
+taylor_islet,Taylor Islet,7.0,moderate modulation,0.553,0.764,true,7,audio guidance is strong enough to improve localization-sensitive detection
+taylor_islet,Taylor Islet,9.0,near-ideal modulation,0.718,0.763,true,7,approaches the strongest selective behavior but remains slightly under-weighted
+taylor_islet,Taylor Islet,11.0,near-ideal modulation,0.661,0.704,true,7,"strong selective behavior, close to the preferred setting"
+taylor_islet,Taylor Islet,13.0,near-ideal modulation,0.675,0.796,true,7,"still selective, with small random variation around the optimum"
+taylor_islet,Taylor Islet,15.0,best modulation,0.901,0.773,true,7,expected best precision/recall tradeoff in simulated results
+taylor_islet,Taylor Islet,18.0,over-strong modulation,0.774,0.777,true,7,"begins to over-trust heatmaps, but degradation is gradual"
+taylor_islet,Taylor Islet,22.0,very strong modulation,0.739,0.743,true,7,audio dominates the visual model; high candidate recovery but low specificity

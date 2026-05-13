@@ -1,0 +1,7 @@
+experiment_name,best_setting,best_precision,best_recall,best_f1,key_takeaway
+main_performance,audio_modulated_yolo,0.7945,0.745,0.7668964840320641,Best method by mean F1
+nighttime_comparison,audio_modulated_yolo,,,0.7668964840320641,Compared full vs night
+localization_controls,Taylor Islet,0.589,0.708,0.6399974902462475,True spatial heatmap improves over random/shuffled? check printed gaps.
+alpha_ablation,15.0,0.8015,0.776,0.7883972421081777,Alpha setting that balances audio-visual weighting
+layer_ablation,12.0,0.8140000000000001,0.8089999999999999,0.8104494440515742,Best fusion layer/stage
+labeled_data_scaling,,,,,Shows label efficiency and saturation point

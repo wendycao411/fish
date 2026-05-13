@@ -1,0 +1,15 @@
+location_id,location,method_id,precision,recall,seed
+danger_rocks,Danger Rocks,visual_only_yolo,0.192,0.59,42
+danger_rocks,Danger Rocks,motion_only,0.184,0.569,42
+danger_rocks,Danger Rocks,late_fusion_audio_box,0.62,0.755,42
+danger_rocks,Danger Rocks,motion_audio_roi_fusion,0.446,0.635,42
+danger_rocks,Danger Rocks,heatmap_channel_yolo,0.758,0.582,42
+danger_rocks,Danger Rocks,mrd_yolo,0.313,0.387,42
+danger_rocks,Danger Rocks,audio_modulated_yolo,0.805,0.629,42
+taylor_islet,Taylor Islet,visual_only_yolo,0.207,0.558,42
+taylor_islet,Taylor Islet,motion_only,0.183,0.48,42
+taylor_islet,Taylor Islet,late_fusion_audio_box,0.548,0.641,42
+taylor_islet,Taylor Islet,motion_audio_roi_fusion,0.366,0.699,42
+taylor_islet,Taylor Islet,heatmap_channel_yolo,0.676,0.584,42
+taylor_islet,Taylor Islet,mrd_yolo,0.258,0.31,42
+taylor_islet,Taylor Islet,audio_modulated_yolo,0.794,0.67,42

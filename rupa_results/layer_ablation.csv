@@ -1,0 +1,17 @@
+location_id,location,layer,stage,precision,recall,seed
+danger_rocks,Danger Rocks,6,late backbone,0.7,0.846,7
+danger_rocks,Danger Rocks,8,deep backbone,0.722,0.778,7
+danger_rocks,Danger Rocks,9,SPPF,0.747,0.738,7
+danger_rocks,Danger Rocks,10,first neck upsample,0.883,0.724,7
+danger_rocks,Danger Rocks,12,neck C2f,0.81,0.863,7
+danger_rocks,Danger Rocks,15,small-scale neck C2f,0.736,0.805,7
+danger_rocks,Danger Rocks,18,mid-scale neck C2f,0.616,0.814,7
+danger_rocks,Danger Rocks,21,final neck C2f,0.566,0.792,7
+taylor_islet,Taylor Islet,6,late backbone,0.569,0.816,7
+taylor_islet,Taylor Islet,8,deep backbone,0.693,0.743,7
+taylor_islet,Taylor Islet,9,SPPF,0.663,0.794,7
+taylor_islet,Taylor Islet,10,first neck upsample,0.823,0.7,7
+taylor_islet,Taylor Islet,12,neck C2f,0.818,0.755,7
+taylor_islet,Taylor Islet,15,small-scale neck C2f,0.68,0.709,7
+taylor_islet,Taylor Islet,18,mid-scale neck C2f,0.618,0.657,7
+taylor_islet,Taylor Islet,21,final neck C2f,0.659,0.628,7

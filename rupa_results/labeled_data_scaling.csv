@@ -1,0 +1,23 @@
+location_id,location,labeled_frames,precision,recall,f1,seed
+danger_rocks,Danger Rocks,10,0.101,0.228,0.14,7
+danger_rocks,Danger Rocks,25,0.106,0.213,0.141,7
+danger_rocks,Danger Rocks,50,0.294,0.369,0.327,7
+danger_rocks,Danger Rocks,100,0.414,0.49,0.448,7
+danger_rocks,Danger Rocks,150,0.507,0.562,0.533,7
+danger_rocks,Danger Rocks,200,0.606,0.659,0.631,7
+danger_rocks,Danger Rocks,300,0.741,0.757,0.749,7
+danger_rocks,Danger Rocks,500,0.78,0.77,0.775,7
+danger_rocks,Danger Rocks,800,0.73,0.838,0.78,7
+danger_rocks,Danger Rocks,1200,0.803,0.846,0.824,7
+danger_rocks,Danger Rocks,2000,0.775,0.811,0.792,7
+taylor_islet,Taylor Islet,10,0.077,0.13,0.096,7
+taylor_islet,Taylor Islet,25,0.129,0.104,0.115,7
+taylor_islet,Taylor Islet,50,0.315,0.35,0.332,7
+taylor_islet,Taylor Islet,100,0.482,0.463,0.472,7
+taylor_islet,Taylor Islet,150,0.511,0.514,0.512,7
+taylor_islet,Taylor Islet,200,0.64,0.605,0.622,7
+taylor_islet,Taylor Islet,300,0.67,0.668,0.669,7
+taylor_islet,Taylor Islet,500,0.761,0.735,0.748,7
+taylor_islet,Taylor Islet,800,0.748,0.777,0.762,7
+taylor_islet,Taylor Islet,1200,0.735,0.765,0.75,7
+taylor_islet,Taylor Islet,2000,0.801,0.752,0.776,7
